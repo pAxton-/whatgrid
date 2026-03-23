@@ -1,4 +1,4 @@
-import { HomesteadItem, ItemCategory } from './data';
+import type { HomesteadItem, ItemCategory } from './data';
 
 // This simulates asking the Gemini API for plant data
 export async function mockGeminiPlantSearch(query: string): Promise<HomesteadItem> {
