@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import GardenScene from './components/GardenScene';
 import Compass from './components/Compass';
+import PropertySetupMap from './components/PropertySetupMap';
 import { ITEM_DB } from './data';
 
 interface ItemContent {
@@ -118,43 +119,9 @@ export default function App() {
     setItems(items.map(i => i.id === id ? { ...i, customLabel, notes } : i));
   };
 
+  // --- THIS IS THE NEW MAP INTEGRATION ---
   if (!propertyData) {
-    return (
-      <div className="fixed inset-0 w-[100dvw] h-[100dvh] bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md w-full bg-gray-900 p-8 rounded-2xl border border-gray-800 shadow-2xl">
-          <h1 className="text-3xl font-bold text-green-500 mb-2 tracking-tight">WhatGrid</h1>
-          <p className="text-gray-400 text-sm mb-6 uppercase tracking-widest font-semibold">Property Initialization</p>
-          
-          <div className="space-y-4 mb-8 text-left">
-            <div>
-              <label className="text-[10px] text-gray-400 uppercase font-black tracking-widest pl-2">Total Square Feet</label>
-              <input id="setup-sqft" type="number" placeholder="e.g. 43560 (1 Acre)" className="w-full bg-black p-4 rounded-xl border border-gray-700 text-white outline-none focus:border-green-500 mt-1" />
-            </div>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="text-[10px] text-gray-400 uppercase font-black tracking-widest pl-2">Latitude</label>
-                <input id="setup-lat" type="number" step="any" placeholder="e.g. 32.8" className="w-full bg-black p-4 rounded-xl border border-gray-700 text-white outline-none focus:border-green-500 mt-1" />
-              </div>
-              <div className="flex-1">
-                <label className="text-[10px] text-gray-400 uppercase font-black tracking-widest pl-2">Longitude</label>
-                <input id="setup-lng" type="number" step="any" placeholder="e.g. -80.0" className="w-full bg-black p-4 rounded-xl border border-gray-700 text-white outline-none focus:border-green-500 mt-1" />
-              </div>
-            </div>
-            <p className="text-[9px] text-gray-500 text-center px-4">Lat/Lng enables accurate solar shadow tracking and lets the AI detect your growing zone.</p>
-          </div>
-
-          <button onClick={() => {
-            const sqft = Number((document.getElementById('setup-sqft') as HTMLInputElement).value);
-            const lat = Number((document.getElementById('setup-lat') as HTMLInputElement).value);
-            const lng = Number((document.getElementById('setup-lng') as HTMLInputElement).value);
-            if (sqft && lat && lng) setPropertyData({ sqft, lat, lng });
-            else alert("Please fill out all fields.");
-          }} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all uppercase tracking-widest text-sm">
-            Launch Simulator
-          </button>
-        </div>
-      </div>
-    );
+    return <PropertySetupMap onConfirm={setPropertyData} />;
   }
 
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
