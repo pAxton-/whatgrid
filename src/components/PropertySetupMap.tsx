@@ -30,7 +30,7 @@ export interface PropertyData {
   sqft: number;
   lat: number;
   lng: number;
-  boundary: [number, number][]; // New: Array of [longitude, latitude] coordinates
+  boundary: [number, number][]; 
 }
 
 interface PropertySetupMapProps {
@@ -50,7 +50,6 @@ export default function PropertySetupMap({ onConfirm }: PropertySetupMapProps) {
       const lng = center.geometry.coordinates[0];
       const lat = center.geometry.coordinates[1];
       
-      // Grab the actual shape coordinates (the outer ring of the polygon)
       const boundary = polygon.geometry.coordinates[0];
 
       setPropertyData({ sqft: Math.round(sqft), lat, lng, boundary });
@@ -64,20 +63,25 @@ export default function PropertySetupMap({ onConfirm }: PropertySetupMapProps) {
       <div className="absolute top-0 left-0 right-0 z-10 p-6 pointer-events-none flex justify-center">
         <div className="bg-gray-900/95 p-6 rounded-2xl border border-gray-800 shadow-2xl pointer-events-auto max-w-md w-full text-center">
           <h1 className="text-2xl font-bold text-green-500 mb-2 tracking-tight">Trace Your Property</h1>
-          <p className="text-gray-400 text-xs mb-4">Click the corners of your yard to calculate area.</p>
+          <p className="text-gray-400 text-xs mb-4">Click the corners of your yard to establish a boundary.</p>
+          
+          {/* Changed this section to hide the SQFT reveal */}
           {propertyData ? (
-            <div className="bg-black/50 p-4 rounded-xl border border-green-500/30 mb-4">
-              <div className="text-xl font-black text-white">{propertyData.sqft.toLocaleString()} <span className="text-sm text-gray-500">SQFT</span></div>
+            <div className="bg-black/50 p-4 rounded-xl border border-green-500/30 mb-4 text-green-400 font-bold text-sm tracking-widest uppercase">
+              Boundary Established
             </div>
           ) : (
-            <div className="bg-black/50 p-4 rounded-xl border border-dashed border-gray-700 mb-4 text-gray-500 text-sm">Waiting for boundary...</div>
+            <div className="bg-black/50 p-4 rounded-xl border border-dashed border-gray-700 mb-4 text-gray-500 text-sm">
+              Waiting for boundary...
+            </div>
           )}
+          
           <button 
             disabled={!propertyData}
             onClick={() => propertyData && onConfirm(propertyData)} 
-            className="w-full bg-green-600 text-white font-bold py-3 rounded-xl disabled:opacity-50 uppercase tracking-widest text-sm"
+            className="w-full bg-green-600 text-white font-bold py-3 rounded-xl disabled:opacity-50 uppercase tracking-widest text-sm hover:bg-green-500 transition-colors"
           >
-            Launch Simulator
+            Confirm Boundary
           </button>
         </div>
       </div>

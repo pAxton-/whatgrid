@@ -31,18 +31,11 @@ export default function TerminalLoader({ propertyData, onComplete }: TerminalLoa
       
       await typeLine(`> CALCULATING PROPERTY BOUNDARY...\n`, 40);
       await sleep(400);
+      
+      // The Big Reveal!
       await typeLine(`> TOTAL AREA: ${propertyData.sqft.toLocaleString()} SQFT\n\n`, 20);
       await sleep(800);
 
-      // Dynamic Zone Calculation (Rough Estimate for Visuals)
-      const estimatedZone = Math.max(3, Math.min(11, Math.floor(13 - (propertyData.lat / 5))));
-      
-      await typeLine(`> PINGING USDA DATABASE FOR LAT: ${propertyData.lat.toFixed(4)}, LNG: ${propertyData.lng.toFixed(4)}...\n`, 30);
-      await sleep(500);
-      await typeLine(`> GROW REGION IDENTIFIED: USDA HARDINESS ZONE ${estimatedZone}\n\n`, 20);
-      await sleep(800);
-
-      // Dynamic Time (Uses the user's local browser timezone)
       const localTime = new Intl.DateTimeFormat('en-US', {
         dateStyle: 'full',
         timeStyle: 'long',
@@ -51,12 +44,13 @@ export default function TerminalLoader({ propertyData, onComplete }: TerminalLoa
       await typeLine(`> LOCAL SYSTEM TIME:\n> ${localTime}\n\n`, 30);
       await sleep(1000);
 
+      await typeLine(`> PINGING SATELLITE FOR LAT: ${propertyData.lat.toFixed(4)}, LNG: ${propertyData.lng.toFixed(4)}...\n`, 30);
+      await sleep(500);
       await typeLine(`> CONNECTING TO VERTEX AI FOR REGIONAL ANALYSIS...\n`, 40);
       
       let aiResponseText = "";
 
       try {
-        // Hitting your Nginx-bridged Python API
         const response = await fetch('/api/analyze-region', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -69,7 +63,6 @@ export default function TerminalLoader({ propertyData, onComplete }: TerminalLoa
         aiResponseText = "CRITICAL ERROR: UPLINK FAILED. PROCEEDING WITH OFFLINE CACHE.";
       }
 
-      // Clear the screen for the AI data reveal
       setText('');
       await sleep(500);
 
