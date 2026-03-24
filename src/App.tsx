@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import GardenScene from './components/GardenScene';
 import Compass from './components/Compass';
 import PropertySetupMap, { PropertyData } from './components/PropertySetupMap';
-import { ITEM_DB } from './data';
 import TerminalLoader from './components/TerminalLoader';
+import { ITEM_DB } from './data';
 
 interface ItemContent {
   id: number;
@@ -36,9 +36,9 @@ const DEFAULT_STRUCTURES = [
 DEFAULT_STRUCTURES.forEach(struct => { ITEM_DB[struct.id] = struct as any; });
 
 export default function App() {
-  // Updated state to use the full PropertyData interface (including the boundary array)
   const [propertyData, setPropertyData] = useState<PropertyData | null>(null);
   const [isBooting, setIsBooting] = useState(true);
+  
   const [timeOfDay, setTimeOfDay] = useState<number>(12);
   const [month, setMonth] = useState<number>(6);
   const [showEnvControls, setShowEnvControls] = useState(false);
@@ -54,7 +54,11 @@ export default function App() {
     const savedFarm = localStorage.getItem('whatgrid_farm');
     const savedSetup = localStorage.getItem('whatgrid_setup');
     if (savedFarm) setItems(JSON.parse(savedFarm));
-    if (savedSetup) setPropertyData(JSON.parse(savedSetup));
+    if (savedSetup) {
+      setPropertyData(JSON.parse(savedSetup));
+      // If we are loading a saved setup, we can skip the boot sequence if you want, 
+      // but usually, it's cool to see it again!
+    }
   }, []);
 
   const saveFarm = () => {
@@ -88,7 +92,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           query: query,
-          context: `The user is located at Latitude ${propertyData.lat}, Longitude ${propertyData.lng}. Factor their local climate and USDA Hardiness Zone into your categorization and advice.`
+          context: `The user is located at Latitude ${propertyData.lat}, Longitude ${propertyData.lng}.`
         }),
       });
       const aiData = await response.json();
@@ -121,21 +125,23 @@ export default function App() {
     setItems(items.map(i => i.id === id ? { ...i, customLabel, notes } : i));
   };
 
+  // --- LOGIC FLOW ---
+
   // 1. If no property data, show the Map
-if (!propertyData) {
-  return <PropertySetupMap onConfirm={setPropertyData} />;
-}
+  if (!propertyData) {
+    return <PropertySetupMap onConfirm={setPropertyData} />;
+  }
 
-// 2. If we have data but are still booting, show the Terminal
-if (isBooting) {
-  return <TerminalLoader propertyData={propertyData} onComplete={() => setIsBooting(false)} />;
-}
+  // 2. If we have data but are still booting, show the Terminal
+  if (isBooting) {
+    return <TerminalLoader propertyData={propertyData} onComplete={() => setIsBooting(false)} />;
+  }
 
-const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// 3. Otherwise, show the full 3D App
-return (
-  <div className="fixed inset-0 w-[100dvw] h-[100dvh] overflow-hidden bg-gray-950 text-white select-none touch-none">
+  // 3. Otherwise, show the full 3D App
+  return (
+    <div className="fixed inset-0 w-[100dvw] h-[100dvh] overflow-hidden bg-gray-950 text-white select-none touch-none">
       
       <div className="absolute inset-0">
         <GardenScene 
@@ -181,7 +187,7 @@ return (
       </div>
 
       <div className="absolute bottom-10 sm:bottom-8 left-0 right-0 pointer-events-auto z-50 flex justify-center px-4">
-        <div className="bg-gray-900/95 p-1.5 rounded-2xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.8)] backdrop-blur-2xl flex gap-1 w-full max-w-sm">
+        <div className="bg-gray-900/95 p-1.5 rounded-2xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.8)] backdrop-blur-2xl flex gap-1 w-full max-sm">
           {(['BUILD', 'EDIT', 'MANAGE'] as AppMode[]).map(m => (
             <button 
               key={m} onClick={() => { setMode(m); setTargetCoord(null); setSelectedItem(null); setShowEnvControls(false); }}

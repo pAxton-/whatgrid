@@ -14,10 +14,8 @@ export default function TerminalLoader({ propertyData, onComplete }: TerminalLoa
   useEffect(() => {
     isCancelled.current = false;
     
-    // Helper function to create realistic terminal pauses
     const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
-    // Helper function to type out text one character at a time
     const typeLine = async (line: string, speed: number = 30) => {
       for (let i = 0; i < line.length; i++) {
         if (isCancelled.current) return;
@@ -36,27 +34,46 @@ export default function TerminalLoader({ propertyData, onComplete }: TerminalLoa
       await typeLine(`> TOTAL AREA: ${propertyData.sqft.toLocaleString()} SQFT\n\n`, 20);
       await sleep(800);
 
-      // We will estimate the Hardiness Zone based on latitude later, using Zone 8 as a placeholder
+      // Dynamic Zone Calculation (Rough Estimate for Visuals)
+      const estimatedZone = Math.max(3, Math.min(11, Math.floor(13 - (propertyData.lat / 5))));
+      
       await typeLine(`> PINGING USDA DATABASE FOR LAT: ${propertyData.lat.toFixed(4)}, LNG: ${propertyData.lng.toFixed(4)}...\n`, 30);
       await sleep(500);
-      await typeLine(`> GROW REGION IDENTIFIED: USDA HARDINESS ZONE 8\n\n`, 20);
+      await typeLine(`> GROW REGION IDENTIFIED: USDA HARDINESS ZONE ${estimatedZone}\n\n`, 20);
       await sleep(800);
 
-      const currentTime = new Date().toLocaleString();
-      await typeLine(`> LOCAL SYSTEM TIME: ${currentTime}\n\n`, 30);
+      // Dynamic Time (Uses the user's local browser timezone)
+      const localTime = new Intl.DateTimeFormat('en-US', {
+        dateStyle: 'full',
+        timeStyle: 'long',
+      }).format(new Date());
+
+      await typeLine(`> LOCAL SYSTEM TIME:\n> ${localTime}\n\n`, 30);
       await sleep(1000);
 
       await typeLine(`> CONNECTING TO VERTEX AI FOR REGIONAL ANALYSIS...\n`, 40);
-      await sleep(1500);
+      
+      let aiResponseText = "";
 
-      // Clear the screen!
+      try {
+        // Hitting your Nginx-bridged Python API
+        const response = await fetch('/api/analyze-region', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: propertyData.lat, lng: propertyData.lng })
+        });
+        
+        const aiData = await response.json();
+        aiResponseText = aiData.text || "CONNECTION ESTABLISHED: NO DATA RETURNED.";
+      } catch (error) {
+        aiResponseText = "CRITICAL ERROR: UPLINK FAILED. PROCEEDING WITH OFFLINE CACHE.";
+      }
+
+      // Clear the screen for the AI data reveal
       setText('');
       await sleep(500);
 
-      // The AI Response (We will wire this to your Python backend later!)
-      const aiResponse = `--- REGIONAL AI ANALYSIS ---\n\nCLIMATE PROFILE:\nYou are located in a temperate transition zone characterized by long, hot summers and relatively mild winters. This gives you an extended growing season but requires heat-tolerant crop varieties mid-summer.\n\nRECOMMENDED CROPS:\n- Early Spring: Leafy greens, carrots, and radishes.\n- Peak Summer: Tomatoes, peppers, okra, and sweet potatoes.\n- Fall Harvest: Broccoli, cabbage, and garlic.\n\nGROWING TIPS:\n1. Mulch heavily to retain soil moisture during the July-August heat spikes.\n2. Consider shade cloth for delicate vegetables during peak afternoon sun.\n3. Your zone is excellent for permanent fruit trees like figs, peaches, and certain apple varieties.\n\n> END OF TRANSMISSION.`;
-
-      await typeLine(aiResponse, 15); // Type the AI text slightly faster
+      await typeLine(`--- REGIONAL AI ANALYSIS ---\n\n${aiResponseText}\n\n> SYSTEM READY.`, 15);
       await sleep(1000);
       
       if (!isCancelled.current) {
@@ -67,7 +84,7 @@ export default function TerminalLoader({ propertyData, onComplete }: TerminalLoa
     bootSequence();
 
     return () => {
-      isCancelled.current = true; // Cleanup if the component unmounts early
+      isCancelled.current = true;
     };
   }, [propertyData]);
 
