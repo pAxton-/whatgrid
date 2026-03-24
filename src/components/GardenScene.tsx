@@ -82,6 +82,13 @@ function SceneContent({ items, mode, selectedItemId, propertySize, latitude, mon
         castShadow 
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0001}
+
+        shadow-camera-left={-propertySize}
+  shadow-camera-right={propertySize}
+  shadow-camera-top={propertySize}
+  shadow-camera-bottom={-propertySize}
+  shadow-camera-near={0.1}
+  shadow-camera-far={500}
       />
       
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow onClick={(e) => {
