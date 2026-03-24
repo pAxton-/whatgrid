@@ -40,44 +40,63 @@ export default function Neighborhood({ centerLat, centerLng, radius = 100 }: Nei
 
     const fetchBuildings = async () => {
       try {
-        const response = await fetch('https://overpass-api.de/api/interpreter', {
+        // We can use a different, less crowded Overpass endpoint as a backup
+        // Main: https://overpass-api.de/api/interpreter
+        // Backup: https://lz4.overpass-api.de/api/interpreter
+        const response = await fetch('https://lz4.overpass-api.de/api/interpreter', {
           method: 'POST',
           body: query
         });
+
+        // 1. If the server times out or fails, exit gracefully
+        if (!response.ok) {
+          console.warn(`Overpass API is busy (Status: ${response.status}). Skipping neighborhood buildings.`);
+          return; 
+        }
+
+        // 2. Check if the response is actually JSON before parsing
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+           console.warn("Overpass API returned non-JSON data. Skipping.");
+           return;
+        }
+
         const data = await response.json();
 
         // 3. Extract the geometry
         const nodes = new Map();
-        data.elements.forEach((el: any) => {
-          if (el.type === 'node') {
-            nodes.set(el.id, [el.lon, el.lat]);
-          }
-        });
+        if (data.elements) {
+          data.elements.forEach((el: any) => {
+            if (el.type === 'node') {
+              nodes.set(el.id, [el.lon, el.lat]);
+            }
+          });
+        }
 
         const extractedBuildings: BuildingData[] = [];
-        data.elements.forEach((el: any) => {
-          if (el.type === 'way' && el.tags?.building) {
-            const coords = el.nodes.map((nodeId: number) => nodes.get(nodeId)).filter(Boolean);
-            
-            // Guess a default height if the map doesn't specify one (approx 1 story = 4m)
-            const heightStr = el.tags.height || el.tags['building:levels'];
-            let height = 4; 
-            if (heightStr) {
-              height = el.tags.height ? parseFloat(el.tags.height) : parseFloat(heightStr) * 3;
-            }
+        if (data.elements) {
+          data.elements.forEach((el: any) => {
+            if (el.type === 'way' && el.tags?.building) {
+              const coords = el.nodes.map((nodeId: number) => nodes.get(nodeId)).filter(Boolean);
+              
+              const heightStr = el.tags.height || el.tags['building:levels'];
+              let height = 4; 
+              if (heightStr) {
+                height = el.tags.height ? parseFloat(el.tags.height) : parseFloat(heightStr) * 3;
+              }
 
-            if (coords.length > 2) {
-              extractedBuildings.push({ id: el.id, coordinates: coords, height });
+              if (coords.length > 2) {
+                extractedBuildings.push({ id: el.id, coordinates: coords, height });
+              }
             }
-          }
-        });
+          });
+        }
 
         setBuildings(extractedBuildings);
       } catch (error) {
-        console.error("Failed to fetch neighborhood data", error);
+        console.warn("Failed to fetch neighborhood data silently:", error);
       }
     };
-
     fetchBuildings();
   }, [centerLat, centerLng, radius]);
 
