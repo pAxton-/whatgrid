@@ -3,6 +3,7 @@ import GardenScene from './components/GardenScene';
 import Compass from './components/Compass';
 import PropertySetupMap, { PropertyData } from './components/PropertySetupMap';
 import { ITEM_DB } from './data';
+import TerminalLoader from './components/TerminalLoader';
 
 interface ItemContent {
   id: number;
@@ -37,7 +38,7 @@ DEFAULT_STRUCTURES.forEach(struct => { ITEM_DB[struct.id] = struct as any; });
 export default function App() {
   // Updated state to use the full PropertyData interface (including the boundary array)
   const [propertyData, setPropertyData] = useState<PropertyData | null>(null);
-  
+  const [isBooting, setIsBooting] = useState(true);
   const [timeOfDay, setTimeOfDay] = useState<number>(12);
   const [month, setMonth] = useState<number>(6);
   const [showEnvControls, setShowEnvControls] = useState(false);
@@ -120,14 +121,21 @@ export default function App() {
     setItems(items.map(i => i.id === id ? { ...i, customLabel, notes } : i));
   };
 
-  if (!propertyData) {
-    return <PropertySetupMap onConfirm={setPropertyData} />;
-  }
+  // 1. If no property data, show the Map
+if (!propertyData) {
+  return <PropertySetupMap onConfirm={setPropertyData} />;
+}
 
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// 2. If we have data but are still booting, show the Terminal
+if (isBooting) {
+  return <TerminalLoader propertyData={propertyData} onComplete={() => setIsBooting(false)} />;
+}
 
-  return (
-    <div className="fixed inset-0 w-[100dvw] h-[100dvh] overflow-hidden bg-gray-950 text-white select-none touch-none">
+const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// 3. Otherwise, show the full 3D App
+return (
+  <div className="fixed inset-0 w-[100dvw] h-[100dvh] overflow-hidden bg-gray-950 text-white select-none touch-none">
       
       <div className="absolute inset-0">
         <GardenScene 
