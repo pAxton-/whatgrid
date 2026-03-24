@@ -26,12 +26,19 @@ function DrawControl(props: any) {
   return null;
 }
 
+export interface PropertyData {
+  sqft: number;
+  lat: number;
+  lng: number;
+  boundary: [number, number][]; // New: Array of [longitude, latitude] coordinates
+}
+
 interface PropertySetupMapProps {
-  onConfirm: (data: { sqft: number; lat: number; lng: number }) => void;
+  onConfirm: (data: PropertyData) => void;
 }
 
 export default function PropertySetupMap({ onConfirm }: PropertySetupMapProps) {
-  const [propertyData, setPropertyData] = useState<{ sqft: number; lat: number; lng: number } | null>(null);
+  const [propertyData, setPropertyData] = useState<PropertyData | null>(null);
 
   const onUpdate = useCallback((e: any) => {
     const data = e.features;
@@ -42,7 +49,11 @@ export default function PropertySetupMap({ onConfirm }: PropertySetupMapProps) {
       const center = turf.centerOfMass(polygon);
       const lng = center.geometry.coordinates[0];
       const lat = center.geometry.coordinates[1];
-      setPropertyData({ sqft: Math.round(sqft), lat, lng });
+      
+      // Grab the actual shape coordinates (the outer ring of the polygon)
+      const boundary = polygon.geometry.coordinates[0];
+
+      setPropertyData({ sqft: Math.round(sqft), lat, lng, boundary });
     } else {
       setPropertyData(null);
     }
