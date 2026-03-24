@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import PropertyObject from './models/PropertyObject';
 import { ITEM_DB } from '../data';
 import { PropertyData } from './PropertySetupMap'; 
+import Neighborhood from './Neighborhood';
 
 interface SceneProps {
   items: any[];
@@ -139,6 +140,13 @@ function SceneContent({ items, mode, selectedItemId, propertySize, month, timeOf
         isNight={isNight}
         onGroundClick={onGroundClick}
       />
+
+      {/* The 3D Surrounding Buildings */}
+   <Neighborhood 
+     centerLat={propertyData.lat} 
+     centerLng={propertyData.lng} 
+     radius={150} 
+   />
 
       <Grid 
         infiniteGrid={false}
